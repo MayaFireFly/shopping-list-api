@@ -5,11 +5,12 @@ import db from './app/models';
 
 const app = express();
 
+var whitelist = ['http://192.168.1.6:3000', 'http://192.168.1.5', 'http://192.168.1.4', 'http://192.168.1.3', 'http://192.168.1.2', 'http://192.168.1.1'];
 const corsOptions = {
-    origin :'http://localhost:3000'
+    origin :whitelist
 };
-
 app.use(cors(corsOptions));
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
 

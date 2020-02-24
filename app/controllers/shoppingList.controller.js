@@ -25,9 +25,11 @@ exports.create = (req, res) => {
 
 exports.findAll = (req, res) => {
     const product = req.query.product;
-    const condition = product ? { product: { [Op.like]: `%${product}%` } } : null;
+    const data = req.query.data;
+    const conditionProduct = product ? { product: { [Op.like]: `%${product}%` } } : null;
+    const conditionData = data ? { deadline : { [Op.lt]: new Date(data) } } : null;
 
-    ShoppingList.findAll({ where: condition })
+    ShoppingList.findAll({ where: {...conditionProduct, ...conditionData} })
     .then((data) => {
         res.status(200).send(data);
     })
@@ -37,7 +39,11 @@ exports.findAll = (req, res) => {
 };
 
 exports.findNotDone = (req, res) => {
-    ShoppingList.findAll({ where: { done: false } })
+    const data = req.query.data;
+    const conditionData = data ? { deadline : { [Op.lt]: new Date(data) } } : null;
+    const conditionDone = { done: false };
+
+    ShoppingList.findAll({ where: {...conditionDone, ...conditionData} })
     .then((data) => {
         res.status(200).send(data);
     })
@@ -75,19 +81,28 @@ exports.update = (req, res) => {
 };
 
 exports.updateDone = (req, res) => {
-    const id = req.params.id;
+    const id = req.params.id;    
 
-    ShoppingList.update({ done: true }, { where: { id: id } })
-    .then((num) => {
-        if(num == 1){
-            res.status(200).send( { message: 'Product was done success.' });
-        }else{
-            res.status(404).send( { message: 'Cannot done product. Maybe it was not found.'});
-        }
+    ShoppingList.findByPk(id)
+    .then((data) => {
+        let done = data.done;
+        
+        ShoppingList.update({ done: !done }, { where: { id: id } })
+           .then((num) => {
+                if(num == 1){
+                    res.status(200).send( { message: 'Product was update done success.' });
+                }else{
+                    res.status(404).send( { message: 'Cannot update done product. Maybe it was not found.'});
+                }
+            })
+            .catch((error) => {
+                res.status(500).send({ message: `Error update done product with id=${id}: ${error.message}`} );
+            });
+
     })
     .catch((error) => {
-        res.status(500).send({ message: `Error set done product with id=${id}: ${error.message}`} );
-    });
+        res.status(500).send({ message: `Error retrieving product with id=${id}: ${error.message}`} );
+    });    
 };
 
 exports.delete = (req, res) => {
